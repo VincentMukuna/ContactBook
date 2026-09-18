@@ -42,11 +42,11 @@ void AddContact(string[] args)
 
     var existingContacts = repository.FindByNumber(phoneNumber);
 
-    if (existingContacts.Count > 0 )
+    if (existingContacts.Count > 0)
     {
         Console.WriteLine($"Found {existingContacts.Count} existing contacts with phone number {phoneNumber}: \n");
         DisplayContacts(existingContacts);
-        if(!Confirm("\nAdd a new entry?"))
+        if (!Confirm("\nAdd a new entry?"))
         {
             Console.WriteLine("Cancelled!");
             return;
@@ -184,7 +184,7 @@ static Dictionary<string, string> ParseOptions(string[] args)
 
         var parts = arg[2..].Split('=', 2);
 
-        if(parts.Length == 2)
+        if (parts.Length == 2)
         {
             var key = parts[0];
             var value = parts[1];
