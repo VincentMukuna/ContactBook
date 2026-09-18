@@ -24,8 +24,7 @@ switch (command)
         break;
 
     case "list":
-        var contacts = repository.GetContacts();
-        ContactPrinter.Display(contacts);
+        commands.List(args);
         break;
 
     case "delete":

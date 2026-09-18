@@ -9,6 +9,15 @@ public class ContactCommands
         this.repository = repository;
     }
 
+    public void List(string[] args)
+    {
+        var contacts = repository.GetContacts();
+
+        Console.WriteLine();
+        ContactPrinter.Display(contacts);
+        Console.WriteLine();
+    }
+
     public void Add(string[] args)
     {
         var name = args[1];
