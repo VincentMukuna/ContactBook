@@ -13,52 +13,111 @@ var repository = new ContactRepository();
 switch (command)
 {
     case "add":
-        var name = args[1];
-        var phoneNumber = args[2];
-
-        var existingContacts = repository.FindByNumber(phoneNumber);
-        switch (existingContacts)
-        {
-            case { Count: 0 }:
-                break;
-            case { Count: 1 }:
-                if (!Confirm($"Found an existing contact with phone number {phoneNumber}."))
-                {
-                    Console.WriteLine("Cancelled!");
-                    Environment.Exit(0);
-                }
-                break;
-            case { Count: var count } when count > 1:
-                if (!Confirm($"Found {count} existing contacts with phone number {phoneNumber}."))
-                {
-                    Console.WriteLine("Cancelled!");
-                    Environment.Exit(0);
-                }
-                break;
-            default:
-                break;
-        }
-
-        Console.WriteLine($"Adding {name}: {phoneNumber}");
-
-        var contact = new Contact { Name = name, PhoneNumber = phoneNumber };
-        repository.AddContact(contact);
-
+        AddContact(args);
         break;
+
+    case "update":
+        UpdateContact(args);
+        break;
+
     case "list":
         var contacts = repository.GetContacts();
         DisplayContacts(contacts);
-
         break;
 
     case "delete":
-        var contactName = args[1];
-
-        Console.WriteLine($"Deleting {contactName}...");
+        DeleteContact(args);
         break;
+
+
     default:
         Console.WriteLine($"Unknown command: {command}");
         break;
+}
+
+void AddContact(string[] args)
+{
+    var name = args[1];
+    var phoneNumber = args[2];
+
+    var existingContacts = repository.FindByNumber(phoneNumber);
+
+    if (existingContacts.Count > 0 )
+    {
+        Console.WriteLine($"Found {existingContacts.Count} existing contacts with phone number {phoneNumber}: \n");
+        DisplayContacts(existingContacts);
+        if(!Confirm("\nAdd a new entry?"))
+        {
+            Console.WriteLine("Cancelled!");
+            return;
+        }
+    }
+
+    var contact = repository.AddContact(new Contact
+    {
+        Name = name,
+        PhoneNumber = phoneNumber
+    });
+
+    Console.WriteLine($"Added {contact.Id} {contact}");
+}
+
+void UpdateContact(string[] args)
+{
+    var id = args[1];
+
+    var guid = Guid.Parse(id);
+
+    var contact = repository.GetContact(guid);
+
+    if (contact is null)
+    {
+        Console.Error.WriteLine($"No contact found with id {id}");
+        return;
+    }
+
+    var options = ParseOptions(args[2..]);
+
+    if (options.TryGetValue("name", out var name))
+    {
+        contact.Name = name;
+    }
+
+    if (options.TryGetValue("phone", out var phone))
+    {
+        contact.PhoneNumber = phone;
+    }
+
+    repository.Save();
+
+    Console.WriteLine($"Updated {contact}");
+}
+
+void DeleteContact(string[] args)
+{
+    var phoneNumber = args[1];
+
+    var matches = repository.FindByNumber(phoneNumber);
+
+    if (matches.Count > 0)
+    {
+        Console.WriteLine($"Found {matches.Count} contact(s) with phone number {phoneNumber}: \n");
+        DisplayContacts(matches);
+
+        if (!Confirm("\nDelete all contact(s)"))
+        {
+            Console.WriteLine("Cancelled!");
+            return;
+        }
+
+    }
+
+    foreach (var contact in matches)
+    {
+        repository.Delete(contact);
+    }
+
+    Console.WriteLine($"Deleting...");
 }
 
 static void DisplayContacts(List<Contact> contacts)
@@ -110,4 +169,29 @@ static bool Confirm(string message)
 
     Console.WriteLine("y");
     return true;
+}
+
+static Dictionary<string, string> ParseOptions(string[] args)
+{
+    var options = new Dictionary<string, string>();
+
+    foreach (var arg in args)
+    {
+        if (!arg.StartsWith("--"))
+        {
+            continue;
+        }
+
+        var parts = arg[2..].Split('=', 2);
+
+        if(parts.Length == 2)
+        {
+            var key = parts[0];
+            var value = parts[1];
+
+            options[key] = value;
+        }
+    }
+
+    return options;
 }

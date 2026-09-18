@@ -13,26 +13,41 @@ public class ContactRepository
     public ContactRepository()
     {
         EnsureDataDirectory();
-        Hydrate();
+        Load();
     }
 
-    public void AddContact(Contact contact)
+    public Contact AddContact(Contact contact)
     {
         contacts.Add(contact);
-        Dehydrate();
+
+        Save();
         idCounter++;
+
+        return contact;
     }
 
-    public  List<Contact> FindByNumber(string number)
+    public Contact? GetContact(Guid id)
+    {
+        return contacts.FirstOrDefault(contact => contact.Id == id);
+    }
+
+    public List<Contact> FindByNumber(string number)
     {
         return contacts
             .Where(contact => contact.PhoneNumber == number)
             .ToList();
     }
 
-    public  List<Contact> GetContacts()
+    public List<Contact> GetContacts()
     {
         return contacts;
+    }
+
+    public void Delete(Contact contact)
+    {
+        contacts.Remove(contact);
+        Save();
+
     }
 
     public int NewId()
@@ -40,7 +55,7 @@ public class ContactRepository
         return idCounter++;
     }
 
-    void Hydrate()
+    void Load()
     {
         if (File.Exists(filePath))
         {
@@ -56,7 +71,7 @@ public class ContactRepository
 
     }
 
-    void Dehydrate()
+    public void Save()
     {
         var json = JsonSerializer.Serialize(
             contacts,
@@ -66,7 +81,7 @@ public class ContactRepository
         File.WriteAllText(filePath, json);
     }
 
-     void EnsureDataDirectory()
+    void EnsureDataDirectory()
     {
         var directory = Path.GetDirectoryName(filePath);
         if (directory is not null)
